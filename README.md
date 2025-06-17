@@ -288,3 +288,12 @@ kohonen3d/
 - **OpenGL/GLUT**: Renderizado 3D de alto rendimiento  
 - **CMake**: Sistema de construcción multiplataforma
 - **Cargador .npy personalizado**: Sin dependencias externas
+
+### Capturas
+#### Fashion
+![fashion](https://github.com/user-attachments/assets/01dc6fc5-d644-4411-81b0-0fc6d31f9463)
+
+#### MINIST
+![mnist](https://github.com/user-attachments/assets/c125ebce-8d2a-4ab7-afa9-c90ea9129d1d)
+
+#

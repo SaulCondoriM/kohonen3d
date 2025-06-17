@@ -145,6 +145,48 @@ float KohonenNetwork::neighborhoodFunction(float distance, float radius) {
     return std::exp(-(distance * distance) / (2 * radius * radius));
 }
 
+void KohonenNetwork::classifyNeurons(const std::vector<MNISTImage>& dataset) {
+    // Count class activations for each neuron
+    std::vector<std::map<int, int>> neuronClassCounts(neurons.size());
+
+    for (const auto& sample : dataset) {
+        int bmu = findBestMatchingUnit(sample.pixels);
+        neuronClassCounts[bmu][sample.label]++;
+    }
+
+    // Assign dominant class to each neuron
+    for (size_t i = 0; i < neurons.size(); ++i) {
+        if (!neuronClassCounts[i].empty()) {
+            auto maxElement = std::max_element(neuronClassCounts[i].begin(),
+                                               neuronClassCounts[i].end(),
+                                               [](const auto& a, const auto& b) {
+                                                   return a.second < b.second;
+                                               });
+            neurons[i].dominantClass = maxElement->first;
+        }
+    }
+}
+
+
+void KohonenNetwork::findPrototypeImages(const std::vector<MNISTImage>& dataset) {
+    // For each neuron, find the training image that activates it most strongly
+    std::vector<float> bestDistance(neurons.size(), std::numeric_limits<float>::max());
+
+    for (const auto& sample : dataset) {
+        int bmu = findBestMatchingUnit(sample.pixels);
+        float distance = calculateDistance(sample.pixels, neurons[bmu]);
+
+        if (distance < bestDistance[bmu]) {
+            bestDistance[bmu] = distance;
+            neurons[bmu].prototypeImage = sample.pixels;
+        }
+    }
+
+    std::cout << "Found prototype images for neurons" << std::endl;
+}
+
+
+
 ClassificationResult KohonenNetwork::classifySample(const MNISTImage& sample) {
     ClassificationResult result;
     result.trueLabel = sample.label;
@@ -155,6 +197,8 @@ ClassificationResult KohonenNetwork::classifySample(const MNISTImage& sample) {
 
     return result;
 }
+
+
 
 MetricsReport KohonenNetwork::evaluateOnDataset(const std::vector<MNISTImage>& testDataset) {
     std::cout << "Evaluating network on test dataset..." << std::endl;
@@ -171,6 +215,49 @@ MetricsReport KohonenNetwork::evaluateOnDataset(const std::vector<MNISTImage>& t
 
     std::cout << "Evaluation completed!" << std::endl;
     return report;
+}
+
+void KohonenNetwork::updateColors() {
+    // Color map for different datasets
+    std::vector<std::vector<float>> colors;
+
+    if (currentDatasetType == DatasetType::MNIST) {
+        // Colors for MNIST digits 0-9
+        colors = {
+            {1.0f, 0.0f, 0.0f},    // 0 - Red
+            {0.0f, 1.0f, 0.0f},    // 1 - Green
+            {0.0f, 0.0f, 1.0f},    // 2 - Blue
+            {1.0f, 1.0f, 0.0f},    // 3 - Yellow
+            {1.0f, 0.0f, 1.0f},    // 4 - Magenta
+            {0.0f, 1.0f, 1.0f},    // 5 - Cyan
+            {1.0f, 0.5f, 0.0f},    // 6 - Orange
+            {0.5f, 0.0f, 1.0f},    // 7 - Purple
+            {1.0f, 0.0f, 0.5f},    // 8 - Pink
+            {0.5f, 0.5f, 0.5f}     // 9 - Gray
+        };
+    } else {
+        // Colors for Fashion-MNIST items 0-9
+        colors = {
+            {0.8f, 0.2f, 0.2f},    // 0 - T-shirt/top - Dark Red
+            {0.2f, 0.2f, 0.8f},    // 1 - Trouser - Dark Blue
+            {0.6f, 0.4f, 0.8f},    // 2 - Pullover - Purple
+            {1.0f, 0.6f, 0.8f},    // 3 - Dress - Pink
+            {0.4f, 0.2f, 0.0f},    // 4 - Coat - Brown
+            {1.0f, 0.8f, 0.4f},    // 5 - Sandal - Tan
+            {0.0f, 0.6f, 0.3f},    // 6 - Shirt - Green
+            {0.9f, 0.9f, 0.9f},    // 7 - Sneaker - White
+            {0.7f, 0.5f, 0.3f},    // 8 - Bag - Light Brown
+            {0.1f, 0.1f, 0.1f}     // 9 - Ankle boot - Black
+        };
+    }
+
+    for (auto& neuron : neurons) {
+        if (neuron.dominantClass >= 0 && neuron.dominantClass < static_cast<int>(colors.size())) {
+            neuron.color = colors[neuron.dominantClass];
+        } else {
+            neuron.color = {0.3f, 0.3f, 0.3f}; // Default gray
+        }
+    }
 }
 
 

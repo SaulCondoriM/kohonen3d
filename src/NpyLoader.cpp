@@ -14,8 +14,7 @@ NpyArray NpyLoader::load(const std::string& filename) {
         std::cerr << "Error: Cannot open file " << filename << std::endl;
         return array;
     }
-
-    // Read magic string
+    
     char magic[6];
     file.read(magic, 6);
     if (std::strncmp(magic, "\x93NUMPY", 6) != 0) {
